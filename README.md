@@ -1,8 +1,8 @@
-# Sollidam 🌍
+# Sollidam
 
 A modern React TypeScript application for location encoding and mapping, featuring an interactive map interface with Tamil Nadu-specific grid system.
 
-## 🚀 Features
+## Features
 
 - **Interactive Map Interface**: Built with Leaflet.js for seamless location selection
 - **Location Encoding**: Custom encoding system for precise location representation
@@ -11,7 +11,7 @@ A modern React TypeScript application for location encoding and mapping, featuri
 - **TypeScript**: Full type safety and better development experience
 - **React Router**: Client-side routing for smooth navigation
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend**: React 18 + TypeScript
 - **Maps**: Leaflet.js
@@ -20,7 +20,7 @@ A modern React TypeScript application for location encoding and mapping, featuri
 - **Icons**: Lucide React
 - **Build Tool**: Create React App
 
-## 📦 Installation
+## Installation
 
 1. **Clone the repository**
    ```bash
@@ -43,7 +43,7 @@ A modern React TypeScript application for location encoding and mapping, featuri
    npm run build
    ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Vercel Deployment (Recommended)
 
@@ -77,7 +77,7 @@ This project is **optimized for easy Vercel deployment** with pre-configured set
 - **AWS S3**: Upload build files to S3 bucket
 - **Firebase Hosting**: Use Firebase CLI
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 sollidam/
@@ -99,7 +99,7 @@ sollidam/
 └── README.md             # This file
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Vercel Configuration
 The project includes a `vercel.json` file with optimized settings:
@@ -111,7 +111,7 @@ The project includes a `vercel.json` file with optimized settings:
 ### Environment Variables
 No environment variables required for basic functionality.
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests
@@ -124,7 +124,7 @@ npm run accuracy-test
 npm run stress-test
 ```
 
-## 📝 Scripts
+## Scripts
 
 - `npm start` - Start development server
 - `npm build` - Build for production
@@ -133,7 +133,7 @@ npm run stress-test
 - `npm run stress-test` - Run stress tests
 - `npm run update-words` - Update word list
 
-## 🌟 Key Features
+## Key Features
 
 ### Location Encoding System
 - Custom grid-based encoding for Tamil Nadu
@@ -152,7 +152,7 @@ npm run stress-test
 - Intuitive navigation
 - Mobile-friendly interface
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -160,21 +160,21 @@ npm run stress-test
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## Support
 
 For support and questions:
 - Create an issue on GitHub
 - Check the documentation in the `/docs` folder
 - Review the test files for usage examples
 
-## 🚀 Live Demo
+## Live Demo
 
 Visit the live application: [Sollidam on Vercel](https://sollidam-7surlzarg-cybersparrowsystems-projects.vercel.app)
 
 ---
 
-**Built with ❤️ using React, TypeScript, and Leaflet.js** 
+**Built with React, TypeScript, and Leaflet.js** 
