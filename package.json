@@ -1,0 +1,44 @@
+{
+  "name": "sollidam",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "update-words": "node scripts/updateWords.js",
+    "stress-test": "npx ts-node stress-test/testAlgorithm.ts",
+    "test-structure": "node stress-test/runTests.js",
+    "accuracy-test": "node accuracy-tests/test-runner.js"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.20",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/react-router-dom": "^5.3.3",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.535.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.7.1",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
+  }
+}
