@@ -1,4 +1,5 @@
 # Sollidam
+## (Beta)
 
 A modern React TypeScript application for location encoding and mapping, featuring an interactive map interface with Tamil Nadu-specific grid system.
 

@@ -10,7 +10,7 @@ const Header: React.FC = () => {
         <Link to="/" className="logo">
           <div className="logo-content">
             <div className="logo-text">
-              <h1>Sollidam</h1>
+              <h1>Sollidam (Beta)</h1>
               <span className="logo-subtitle">சொல்லிடம் - The world will know where you are!</span>
             </div>
           </div>
