@@ -1,116 +1,147 @@
+---
+
 # Sollidam
+
 ## (Beta)
 
 A modern React TypeScript application for location encoding and mapping, featuring an interactive map interface with Tamil Nadu-specific grid system.
 
-## Features
+---
 
-- **Interactive Map Interface**: Built with Leaflet.js for seamless location selection
-- **Location Encoding**: Custom encoding system for precise location representation
-- **Tamil Nadu Grid System**: Specialized grid resolution for Tamil Nadu region
-- **Responsive Design**: Modern UI with mobile-friendly interface
-- **TypeScript**: Full type safety and better development experience
-- **React Router**: Client-side routing for smooth navigation
+## Project Vision
 
-## Tech Stack
+**Sollidam** (சொல்லிடம்) is a free, open-source location encoding system inspired by What3Words, built especially for Tamil Nadu. It turns complex GPS coordinates into simple and memorable three-word addresses, with optional support for floor-level precision.
 
-- **Frontend**: React 18 + TypeScript
-- **Maps**: Leaflet.js
-- **Routing**: React Router DOM v6
-- **Styling**: CSS3 with modern design patterns
-- **Icons**: Lucide React
-- **Build Tool**: Create React App
+### Why Sollidam?
 
-## Installation
+Tamil Nadu and much of India struggle with ambiguous or non-standard addresses:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/subhashraveendran/sollidam.git
-   cd sollidam
-   ```
+* "2nd street near temple" is not machine-readable
+* Many buildings lack house numbers or floor indicators
+* Voice assistants and low-literacy populations face usability issues
+* Existing systems (like What3Words) are closed-source, do not support floor levels, and require internet access
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+**Sollidam solves this.**
 
-3. **Start development server**
-   ```bash
-   npm start
-   ```
+* Open-source and fully transparent
+* Works offline in mobile (not yet implemented)
+* Tamil Nadu specific
+* Floor-level support
 
-4. **Build for production**
-   ```bash
-   npm run build
-   ```
+---
 
-## Deployment
+## Serverless API (No Frontend)
 
-### Vercel Deployment (Recommended)
+### Goal
 
-This project is **optimized for easy Vercel deployment** with pre-configured settings:
+Create a simple, production-ready API that:
 
-1. **One-Click Deploy**
-   - Click the "Deploy" button below
-   - Connect your GitHub repository
-   - Vercel will automatically detect the React app and deploy
+* Converts **GPS coordinates ↔ 3-word code** using existing `Sollidam` algorithm
+* Works via REST endpoints
+* Deployed fully **serverless** with **no frontend**
+* Also supports **Telegram Bot integration (Coming Soon)**
 
-   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/subhashraveendran/sollidam)
+### Tech Stack
 
-2. **Manual Deployment**
-   ```bash
-   # Install Vercel CLI
-   npm install -g vercel
-   
-   # Deploy
-   vercel --prod
-   ```
+* **React 18**: Modern UI library for building interactive interfaces.
+* **TypeScript**: Type-safe JavaScript for robust code and better developer experience.
+* **React Router DOM v6**: Client-side routing for seamless navigation.
+* **Leaflet.js**: Open-source library for interactive maps and geospatial features.
+* **Lucide React**: Icon library for crisp and modern SVG icons.
+* **CSS3**: Responsive styling with mobile-first design patterns.
 
-3. **GitHub Integration**
-   - Push to your GitHub repository
-   - Connect repository to Vercel dashboard
-   - Automatic deployments on every push
+---
 
-### Other Deployment Options
+## API Documentation
 
-- **Netlify**: Drag and drop the `build` folder
-- **GitHub Pages**: Use `gh-pages` package
-- **AWS S3**: Upload build files to S3 bucket
-- **Firebase Hosting**: Use Firebase CLI
+### Endpoint 1: Convert Words to Coordinates
 
-## Project Structure
+**GET** Convert a 3-word address to geographic coordinates
 
-```
-sollidam/
-├── public/                 # Static assets
-├── src/
-│   ├── components/         # React components
-│   │   ├── Header.tsx
-│   │   ├── LocationMap.tsx
-│   │   └── SearchBar.tsx
-│   ├── pages/             # Page components
-│   │   ├── HomePage.tsx
-│   │   ├── AboutPage.tsx
-│   │   └── ApiPage.tsx
-│   ├── services/          # API services
-│   ├── utils/             # Utility functions
-│   └── types/             # TypeScript type definitions
-├── vercel.json            # Vercel configuration
-├── package.json           # Dependencies and scripts
-└── README.md             # This file
+```url
+https://api-sollidam.vercel.app/api/lookup?words=word1.word2.word3
 ```
 
-## Configuration
+**Example Request:**
 
-### Vercel Configuration
-The project includes a `vercel.json` file with optimized settings:
-- Automatic build detection
-- Client-side routing support
-- Legacy peer deps for compatibility
-- Proper output directory configuration
+```url
+GET https://api-sollidam.vercel.app/api/lookup?words=blue.sky.cloud
+```
 
-### Environment Variables
-No environment variables required for basic functionality.
+**Response Format:**
+
+```json
+{
+  "lat": 8.795380650062402,
+  "long": 77.53822544897345
+}
+```
+
+### Endpoint 2: Convert Coordinates to Words
+
+**GET** Convert geographic coordinates to a 3-word address
+
+```url
+https://api-sollidam.vercel.app/api/lookup?location=latitude,longitude
+```
+
+**Example Request:**
+
+```url
+GET https://api-sollidam.vercel.app/api/lookup?location=11.0168,76.9558
+```
+
+**Response Format:**
+
+```json
+{
+  "words": "moon.visitor.point"
+}
+```
+
+### API Code Repository
+
+To explore the backend logic and integrate your own tools:
+
+[**api-sollidam**](https://github.com/subhashraveendran/api-sollidam)
+
+
+### API Base URL:
+
+```
+https://api-sollidam.vercel.app
+```
+
+Main Application:
+
+```
+https://sollidam.vercel.app
+```
+
+---
+
+## Telegram Bot Integration (Coming Soon)
+
+This feature will allow:
+
+* Share location → Get 3-word code + map link
+* Send 3-word code → Get location + map
+* Seamless location sharing without GPS apps
+
+---
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start dev server
+npm start
+
+# Build for production
+npm run build
+```
 
 ## Testing
 
@@ -118,64 +149,38 @@ No environment variables required for basic functionality.
 # Run tests
 npm test
 
-# Run accuracy tests
+# Accuracy and Stress
 npm run accuracy-test
-
-# Run stress tests
 npm run stress-test
 ```
 
-## Scripts
+## Deployment
 
-- `npm start` - Start development server
-- `npm build` - Build for production
-- `npm test` - Run test suite
-- `npm run accuracy-test` - Run accuracy tests
-- `npm run stress-test` - Run stress tests
-- `npm run update-words` - Update word list
+### Vercel (Recommended)
+
+* One-click: [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/subhashraveendran/sollidam)
+* Or manually using:
+
+```bash
+npm install -g vercel
+vercel --prod
+```
 
 ## Key Features
 
-### Location Encoding System
-- Custom grid-based encoding for Tamil Nadu
-- Precise location representation
-- Floor-level support
-
-### Interactive Map
-- Leaflet.js integration
-- Tamil Nadu boundary constraints
-- Grid overlay system
-- Satellite and street view options
-
-### Modern UI/UX
-- Responsive design
-- Smooth animations
-- Intuitive navigation
-- Mobile-friendly interface
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+* 3-word reversible encoding for Tamil Nadu
+* Floor-level support
+* Grid-encoded map using Leaflet.js
+* Works offline in mobile (not yet implemented)
+* Fully open-source and documented
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
-## Support
+## GitHub
 
-For support and questions:
-- Create an issue on GitHub
-- Check the documentation in the `/docs` folder
-- Review the test files for usage examples
+* Repository: [github.com/subhashraveendran/sollidam](https://github.com/subhashraveendran/sollidam)
+* API Documentation: [https://api-sollidam.vercel.app](https://api-sollidam.vercel.app)
 
-## Live Demo
-
-Visit the live application: [Sollidam on Vercel](https://sollidam-7surlzarg-cybersparrowsystems-projects.vercel.app)
-
----
-
-**Built with React, TypeScript, and Leaflet.js** 
+Made with 💖 for Hero's on Wheels
