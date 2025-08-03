@@ -1,7 +1,7 @@
 .about-page {
   min-height: 100vh;
   background: #000000 !important;
-  padding: 2rem 0;
+  padding: 3rem 0 80px 0;
   overflow-y: visible !important;
 }
 
@@ -13,12 +13,12 @@
 
 .hero-section {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 4rem;
 }
 
 .hero-section h1 {
   font-size: 3rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   color: #ffffff !important;
   font-weight: 700;
 }
@@ -32,12 +32,12 @@
 .content-section {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 3rem;
 }
 
 .about-card {
   background: #111111 !important;
-  padding: 2rem;
+  padding: 2.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(255, 255, 255, 0.1);
   border: 1px solid #333333 !important;
@@ -45,16 +45,14 @@
 
 .about-card h2 {
   color: #ffffff !important;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   font-size: 1.8rem;
-  border-bottom: 2px solid #667eea;
-  padding-bottom: 0.5rem;
 }
 
 .about-card p {
   color: #cccccc !important;
   line-height: 1.7;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .about-card p:last-child {
@@ -63,7 +61,7 @@
 
 .problem-list h3 {
   color: #ffffff !important;
-  margin: 1.5rem 0 1rem 0;
+  margin: 2rem 0 1.5rem 0;
   font-size: 1.2rem;
 }
 
@@ -72,14 +70,14 @@
 }
 
 .problem-list ul {
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 2rem 0;
   padding-left: 1.5rem;
 }
 
 .problem-list li {
   color: #cccccc !important;
   line-height: 1.6;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .problem-list strong {
@@ -89,19 +87,19 @@
 .algorithm-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .step {
   background: #222222 !important;
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #ffffff;
 }
 
 .step h3 {
-  color: #667eea;
-  margin-bottom: 0.5rem;
+  color: #ffffff;
+  margin-bottom: 1rem;
   font-size: 1.1rem;
 }
 
@@ -115,17 +113,17 @@
 .tech-details {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .tech-item h3 {
   color: #ffffff !important;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   font-size: 1.2rem;
 }
 
 .tech-item p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   color: #cccccc !important;
 }
 
@@ -141,18 +139,18 @@
 .tech-item li {
   color: #cccccc !important;
   line-height: 1.6;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .feature {
   background: #222222 !important;
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 8px;
   text-align: center;
   transition: transform 0.3s ease;
@@ -163,8 +161,8 @@
 }
 
 .feature h3 {
-  color: #667eea;
-  margin-bottom: 0.5rem;
+  color: #ffffff;
+  margin-bottom: 1rem;
   font-size: 1.1rem;
 }
 
@@ -177,15 +175,15 @@
 .cost-table {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .cost-item {
-  padding: 1rem;
+  padding: 1.5rem;
   background: #222222 !important;
   border-radius: 6px;
   color: #cccccc !important;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid #ffffff;
 }
 
 .cost-item strong {
@@ -203,7 +201,7 @@
 .comparison-table {
   width: 100% !important;
   border-collapse: collapse !important;
-  margin: 20px 0 !important;
+  margin: 25px 0 !important;
   background: #222222 !important;
   border-radius: 8px !important;
   overflow: hidden !important;
@@ -212,7 +210,7 @@
 .comparison-table th {
   background: #333333 !important;
   color: #ffffff !important;
-  padding: 12px 16px !important;
+  padding: 15px 20px !important;
   text-align: left !important;
   font-weight: 600 !important;
   font-size: 14px !important;
@@ -220,7 +218,7 @@
 }
 
 .comparison-table td {
-  padding: 12px 16px !important;
+  padding: 15px 20px !important;
   color: #cccccc !important;
   border-bottom: 1px solid #333333 !important;
   font-size: 14px !important;
@@ -254,7 +252,7 @@
   }
   
   .about-card {
-    padding: 1.5rem;
+    padding: 2rem;
   }
   
   .about-card h2 {

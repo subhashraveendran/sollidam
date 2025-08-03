@@ -19,41 +19,19 @@ const ApiPage: React.FC = () => {
       <div className="page-container">
         <header className="page-header">
           <Link to="/" className="back-link">← Back to Map</Link>
-          <h1>API Documentation</h1>
+          <h1>Sollidam API</h1>
         </header>
 
         <div className="content-section">
-          <h2>Request API Access</h2>
-          <p>
-            Want to integrate Sollidam into your application, chatbot, or mapping tool?
-          </p>
-          <p>
-            Our API is lightweight, fast, and designed to work even in low-resource setups. Perfect for developers, researchers, and innovators.
-          </p>
-
           <div className="about-card">
-            <h3>Features of the Sollidam API</h3>
-            <ul>
-              <li><strong>Encode GPS coordinates</strong> into easy-to-remember 3-word codes</li>
-              <li><strong>Decode word codes</strong> back into precise latitude & longitude</li>
-              <li><strong>Supports floor-level (Z-axis)</strong> for multi-storey buildings</li>
-              <li><strong>Tamil Nadu-only optimized grid</strong> for ultra-fast and offline-friendly use</li>
-              <li><strong>No database required</strong> – deterministic and stateless</li>
-              <li><strong>Zero cost</strong> for approved developers during beta</li>
-              <li><strong>Simple, fast, and safe</strong> to use via REST-style endpoints</li>
-              <li><strong>Perfect for bots, Telegram apps, delivery tools, or civic projects</strong></li>
-            </ul>
-          </div>
-
-          <div className="about-card">
-            <h3>How to Get Started</h3>
+            <h3>Get Started</h3>
             <p>
-              To use the API, submit a quick request using the link below.
-              We'll review and respond via email with your API key.
+              Click the button below to view detailed API documentation with examples, 
+              endpoint specifications, and usage guidelines.
             </p>
             <div className="contact-info" style={{ textAlign: 'center' }}>
               <a 
-                href="https://forms.gle/KMfRhu4Eiq1Rc15x9" 
+                href="https://api-sollidam.vercel.app" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="api-request-button"
@@ -64,33 +42,39 @@ const ApiPage: React.FC = () => {
                   WebkitTextStroke: '0px'
                 }}
               >
-                Request API Access
+                View API Documentation
               </a>
-              <p style={{ marginTop: '8px', fontSize: '14px', color: '#888888' }}>
-                <em>(Takes less than 2 minutes)</em>
-              </p>
             </div>
           </div>
 
           <div className="about-card">
-            <h3>Why Is It Free?</h3>
+            <h3>Two Simple Endpoints</h3>
             <ul>
-              <li>We're in beta (developer preview mode)</li>
-              <li>This helps us test real-world use cases and improve reliability</li>
-              <li>You help us by providing feedback — and enjoy free access!</li>
-              <li>Once production-ready, pricing tiers may apply based on usage.</li>
+              <li><strong>Words → Coordinates:</strong> Convert 3-word addresses to precise GPS coordinates</li>
+              <li><strong>Coordinates → Words:</strong> Convert GPS coordinates to easy-to-remember 3-word codes</li>
             </ul>
+            <p style={{ marginTop: '16px', fontSize: '14px', color: '#666' }}>
+              <em>3-meter resolution grid • Tamil Nadu coverage • No database required</em>
+            </p>
           </div>
 
           <div className="about-card">
-            <h3>Contact & Code</h3>
+            <h3>Contact & Support</h3>
             <div className="contact-info">
-              <p><strong>GitHub:</strong> <a href="https://github.com/subhashraveendran" target="_blank" rel="noopener noreferrer">github.com/subhashraveendran</a></p>
+              <p><strong>GitHub:</strong> <a href="https://github.com/subhashraveendran/sollidam" target="_blank" rel="noopener noreferrer">github.com/subhashraveendran/sollidam</a></p>
               <p><strong>Email:</strong> <a href="mailto:mailtosubhashr@gmail.com">mailtosubhashr@gmail.com</a></p>
-              <p><em>Have an idea or use case? Reach out — we'd love to feature your project!</em></p>
+              <p><em>Have questions or need help integrating? We're here to help!</em></p>
             </div>
           </div>
         </div>
+
+        <footer className="api-footer">
+          <div className="footer-content">
+            <p><strong>API Base URL:</strong> <a href="https://api-sollidam.vercel.app" target="_blank" rel="noopener noreferrer">https://api-sollidam.vercel.app</a></p>
+            <p className="footer-heart">Built with 💖 for Heros on Wheels</p>
+            <p><strong>Github:</strong> <a href="https://github.com/subhashraveendran/sollidam" target="_blank" rel="noopener noreferrer">github.com/subhashraveendran/sollidam</a></p>
+          </div>
+        </footer>
       </div>
     </div>
   );
