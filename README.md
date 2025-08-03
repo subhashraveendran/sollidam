@@ -16,7 +16,7 @@ A modern React TypeScript application for location encoding and mapping, featuri
 
 Tamil Nadu and much of India struggle with ambiguous or non-standard addresses:
 
-* "2nd street near temple" is not machine-readable
+* "2nd street near murugan temple" is not machine-readable
 * Many buildings lack house numbers or floor indicators
 * Voice assistants and low-literacy populations face usability issues
 * Existing systems (like What3Words) are closed-source, do not support floor levels, and require internet access
@@ -184,3 +184,5 @@ This project is licensed under the MIT License.
 * API Documentation: [https://api-sollidam.vercel.app](https://api-sollidam.vercel.app)
 
 Made with 💖 for Hero's on Wheels
+
+\#NenjeEzhu
