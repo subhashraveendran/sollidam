@@ -132,7 +132,7 @@ const AboutPage: React.FC = () => {
         <footer className="api-footer">
           <div className="footer-content">
             <p><strong>API Base URL:</strong> <a href="https://api-sollidam.vercel.app" target="_blank" rel="noopener noreferrer">https://api-sollidam.vercel.app</a></p>
-            <p className="footer-heart">Built with 💖 for Heros on Wheels 🚲</p>
+            <p className="footer-heart">Built with 💖 for Heros on Wheels</p>
             <p><strong>Github:</strong> <a href="https://github.com/subhashraveendran/sollidam" target="_blank" rel="noopener noreferrer">github.com/subhashraveendran/sollidam</a></p>
           </div>
         </footer>
