@@ -8,6 +8,7 @@ import {
   isValidWord, 
   getWordListLength 
 } from '../utils/wordList';
+import logger from '../utils/logger';
 
 interface SearchBarProps {
   onLocationSelect?: (location: Location) => void;
@@ -28,20 +29,58 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
   const [apiStatus, setApiStatus] = useState<'google' | 'nominatim' | 'fallback'>('google');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const searchCache = useRef<Map<string, any[]>>(new Map()); // Simple cache for search results
+  const addressCache = useRef<Map<string, string>>(new Map()); // Cache for reverse geocoding
+  const processedLocationRef = useRef<string | null>(null); // Track processed location to prevent duplicates
 
   // Handle initial location from URL
   useEffect(() => {
     if (initialLocation && initialEncodedLocation) {
-      console.log('📍 Loading initial location from URL:', initialLocation);
+      const locationKey = `${initialLocation.lat.toFixed(6)},${initialLocation.lng.toFixed(6)}`;
+      
+      // Skip if already processed
+      if (processedLocationRef.current === locationKey) {
+        return;
+      }
+      
+      logger.log('📍 Loading initial location from URL:', initialLocation);
+      processedLocationRef.current = locationKey;
+      
+      // Check cache first
+      const cachedAddress = addressCache.current.get(locationKey);
+      if (cachedAddress) {
+        setShowResults(true);
+        setSelectedResult({
+          threeWordCode: initialEncodedLocation,
+          address: cachedAddress,
+          coordinates: `${initialLocation.lat.toFixed(6)}, ${initialLocation.lng.toFixed(6)}`,
+          floor: initialLocation.floor
+        });
+        return;
+      }
       
       // Get address from coordinates
       const getAddressFromCoordinates = async () => {
         try {
           const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${initialLocation.lat}&lon=${initialLocation.lng}&format=json&addressdetails=1`
+            `https://nominatim.openstreetmap.org/reverse?lat=${initialLocation.lat}&lon=${initialLocation.lng}&format=json&addressdetails=1`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
+              }
+            }
           );
+          
+          if (!nominatimResponse.ok) {
+            throw new Error(`HTTP error! status: ${nominatimResponse.status}`);
+          }
+          
           const nominatimData = await nominatimResponse.json();
           const address = nominatimData.display_name || `${initialEncodedLocation} (Decoded)`;
+          
+          // Cache the address
+          addressCache.current.set(locationKey, address);
           
           setShowResults(true);
           setSelectedResult({
@@ -51,11 +90,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             floor: initialLocation.floor
           });
         } catch (error) {
-          console.error('Error getting address:', error);
+          logger.error('Error getting address:', error);
+          // Still show the result with the encoded location as address
+          const fallbackAddress = `Location: ${initialEncodedLocation}`;
+          addressCache.current.set(locationKey, fallbackAddress);
           setShowResults(true);
           setSelectedResult({
             threeWordCode: initialEncodedLocation,
-            address: `${initialEncodedLocation} (Decoded)`,
+            address: fallbackAddress,
             coordinates: `${initialLocation.lat.toFixed(6)}, ${initialLocation.lng.toFixed(6)}`,
             floor: initialLocation.floor
           });
@@ -66,23 +108,61 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
     }
   }, [initialLocation, initialEncodedLocation]);
 
-  // Handle location selection from map click
+  // Handle location selection from map click or other sources
   useEffect(() => {
-    console.log('📍 SearchBar: Location props changed:', { selectedLocation, encodedLocation });
+    logger.log('📍 SearchBar: Location props changed:', { selectedLocation, encodedLocation });
     
-    if (selectedLocation) {
-      console.log('📍 Location selected from map:', selectedLocation);
+    if (selectedLocation && encodedLocation) {
+      const locationKey = `${selectedLocation.lat.toFixed(6)},${selectedLocation.lng.toFixed(6)}`;
+      
+      // Skip if this is the same location we just processed from URL
+      if (processedLocationRef.current === locationKey && initialLocation) {
+        const initialKey = `${initialLocation.lat.toFixed(6)},${initialLocation.lng.toFixed(6)}`;
+        if (locationKey === initialKey) {
+          return; // Already handled by initial location effect
+        }
+      }
+      
+      logger.log('📍 Location selected from map:', selectedLocation);
+      
+      // Check cache first
+      const cachedAddress = addressCache.current.get(locationKey);
+      if (cachedAddress) {
+        setShowResults(true);
+        setSelectedResult({
+          threeWordCode: encodedLocation,
+          address: cachedAddress,
+          coordinates: `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`,
+          floor: selectedLocation.floor
+        });
+        return;
+      }
       
       // Get address from coordinates
       const getAddressFromCoordinates = async () => {
         try {
           const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${selectedLocation.lat}&lon=${selectedLocation.lng}&format=json&addressdetails=1`
+            `https://nominatim.openstreetmap.org/reverse?lat=${selectedLocation.lat}&lon=${selectedLocation.lng}&format=json&addressdetails=1`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
+              }
+            }
           );
+          
+          if (!nominatimResponse.ok) {
+            throw new Error(`HTTP error! status: ${nominatimResponse.status}`);
+          }
+          
           const nominatimData = await nominatimResponse.json();
           const address = nominatimData.display_name || `${encodedLocation || 'Selected Location'}`;
           
-          console.log('📍 Setting search results for map click');
+          // Cache the address
+          addressCache.current.set(locationKey, address);
+          
+          logger.log('📍 Setting search results for map click');
           setShowResults(true);
           setSelectedResult({
             threeWordCode: encodedLocation || 'N/A',
@@ -91,11 +171,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             floor: selectedLocation.floor
           });
         } catch (error) {
-          console.error('Error getting address:', error);
+          logger.error('Error getting address:', error);
+          // Still show the result with the encoded location as address
+          const fallbackAddress = `Location: ${encodedLocation || 'Selected Location'}`;
+          addressCache.current.set(locationKey, fallbackAddress);
           setShowResults(true);
           setSelectedResult({
             threeWordCode: encodedLocation || 'N/A',
-            address: `${encodedLocation || 'Selected Location'}`,
+            address: fallbackAddress,
             coordinates: `${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`,
             floor: selectedLocation.floor
           });
@@ -104,7 +187,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
       
       getAddressFromCoordinates();
     }
-  }, [selectedLocation, encodedLocation]);
+  }, [selectedLocation, encodedLocation, initialLocation]);
 
   // Auto-detect if input is a 3-word code
   const isThreeWordCode = (query: string): boolean => {
@@ -145,24 +228,24 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
     
     // Check if input is a 3-word code (regardless of mode)
     if (isThreeWordCode(searchQuery)) {
-      console.log('🔍 Decoding 3-word code:', searchQuery);
+      logger.log('🔍 Decoding 3-word code:', searchQuery);
       
       // Extract words and floor
       const { words, floor } = extractFloorNumber(searchQuery);
-      console.log('📝 Extracted words:', words);
-      console.log('🏢 Floor:', floor);
+      logger.log('📝 Extracted words:', words);
+      logger.log('🏢 Floor:', floor);
       
       // Get word indices for debugging
       const wordIndices = words.map(word => {
         const index = getIndexByWord(word);
-        console.log(`🔤 Word "${word}" -> Index ${index}`);
+        logger.log(`🔤 Word "${word}" -> Index ${index}`);
         return index;
       });
-      console.log('📊 Word indices:', wordIndices);
+      logger.log('📊 Word indices:', wordIndices);
       
       // Decode the location
       const decodedLocation = decodeLocation(words, floor);
-      console.log('📍 Decoded location:', decodedLocation);
+      logger.log('📍 Decoded location:', decodedLocation);
       
       if (decodedLocation && onLocationSelect) {
         onLocationSelect(decodedLocation);
@@ -170,8 +253,20 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         // Get address from coordinates
         try {
           const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?lat=${decodedLocation.lat}&lon=${decodedLocation.lng}&format=json&addressdetails=1`
+            `https://nominatim.openstreetmap.org/reverse?lat=${decodedLocation.lat}&lon=${decodedLocation.lng}&format=json&addressdetails=1`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
+              }
+            }
           );
+          
+          if (!nominatimResponse.ok) {
+            throw new Error(`HTTP error! status: ${nominatimResponse.status}`);
+          }
+          
           const nominatimData = await nominatimResponse.json();
           const address = nominatimData.display_name || `${searchQuery} (Decoded)`;
           
@@ -183,17 +278,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             floor: decodedLocation.floor
           });
         } catch (error) {
-          console.error('Error getting address:', error);
+          logger.error('Error getting address:', error);
           setShowResults(true);
           setSelectedResult({
             threeWordCode: searchQuery,
-            address: `${searchQuery} (Decoded)`,
+            address: `Location: ${searchQuery}`,
             coordinates: `${decodedLocation.lat.toFixed(6)}, ${decodedLocation.lng.toFixed(6)}`,
             floor: decodedLocation.floor
           });
         }
       } else {
-        console.error('❌ Failed to decode 3-word code');
+        logger.error('❌ Failed to decode 3-word code');
         alert('Invalid 3-word code. Please check the format.');
       }
       
@@ -210,7 +305,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         const lng = parseFloat(coords[1]);
         
         if (!isNaN(lat) && !isNaN(lng)) {
-          console.log('📍 Processing coordinates:', lat, lng);
+          logger.log('📍 Processing coordinates:', lat, lng);
           const location = { lat, lng, floor: undefined };
           onLocationSelect?.(location);
           
@@ -237,25 +332,25 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
     
     // Handle address search (Google Maps or Nominatim)
     try {
-      console.log('🔍 Starting address search for:', searchQuery);
-      console.log('🔧 Using API:', searchMode);
+      logger.log('🔍 Starting address search for:', searchQuery);
+      logger.log('🔧 Using API:', searchMode);
       
       let results = [];
 
       if (searchMode === 'google') {
         const googleApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-        console.log('🔑 Google API Key available:', !!googleApiKey);
+        logger.log('🔑 Google API Key available:', !!googleApiKey);
         
         if (googleApiKey && googleApiKey !== 'YOUR_API_KEY_HERE' && googleApiKey.trim() !== '') {
           const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery)}&key=${googleApiKey}&region=in`;
-          console.log('🌐 Google Maps URL:', url);
+          logger.log('🌐 Google Maps URL:', url);
           
           const response = await fetch(url);
           const data = await response.json();
-          console.log('📡 Google Maps response:', data);
+          logger.log('📡 Google Maps response:', data);
           
           if (data.status === 'REQUEST_DENIED') {
-            console.error('❌ Google Maps API key is invalid or has restrictions');
+            logger.error('❌ Google Maps API key is invalid or has restrictions');
             alert('Google Maps API key is invalid or has restrictions. Please check your configuration.');
             setIsLoading(false);
             return;
@@ -271,13 +366,25 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             }));
           }
         } else {
-          console.log('⚠️ No valid Google API key, falling back to Nominatim');
+          logger.log('⚠️ No valid Google API key, falling back to Nominatim');
           // Fallback to Nominatim
           const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
+              }
+            }
           );
+          
+          if (!nominatimResponse.ok) {
+            throw new Error(`HTTP error! status: ${nominatimResponse.status}`);
+          }
+          
           const nominatimData = await nominatimResponse.json();
-          console.log('📡 Nominatim fallback response:', nominatimData);
+          logger.log('📡 Nominatim fallback response:', nominatimData);
           
           results = nominatimData.map((item: any) => ({
             display_name: item.display_name,
@@ -290,17 +397,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
       } else if (searchMode === 'nominatim') {
         // Use Nominatim
         const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(searchQuery)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`;
-        console.log('🌐 Nominatim URL:', url);
+        logger.log('🌐 Nominatim URL:', url);
         
         const nominatimResponse = await fetch(url, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'Sollidam/1.0'
+            'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
           }
         });
         const nominatimData = await nominatimResponse.json();
-        console.log('📡 Nominatim response:', nominatimData);
+        logger.log('📡 Nominatim response:', nominatimData);
         
         results = nominatimData.map((item: any) => ({
           display_name: item.display_name,
@@ -311,19 +418,19 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         }));
       }
 
-      console.log('✅ Search results:', results);
+      logger.log('✅ Search results:', results);
       
       if (results.length > 0) {
         // Automatically select the first result
         const firstResult = results[0];
-        console.log('📍 Auto-selecting first result:', firstResult);
+        logger.log('📍 Auto-selecting first result:', firstResult);
         
         // Generate the actual 3-word code from coordinates
         const encodedLocation = encodeLocation(firstResult.lat, firstResult.lon);
-        console.log('🔐 Encoded location:', encodedLocation);
+        logger.log('🔐 Encoded location:', encodedLocation);
         
         const threeWordCode = encodedLocation ? formatEncodedLocation(encodedLocation) : 'invalid.coordinates.code';
-        console.log('📝 Generated 3-word code:', threeWordCode);
+        logger.log('📝 Generated 3-word code:', threeWordCode);
         
         if (onLocationSelect) {
           const locationToSelect = {
@@ -331,7 +438,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             lng: firstResult.lon,
             floor: undefined
           };
-          console.log('🗺️ Calling onLocationSelect with:', locationToSelect);
+          logger.log('🗺️ Calling onLocationSelect with:', locationToSelect);
           onLocationSelect(locationToSelect);
         }
         
@@ -349,7 +456,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         alert('No locations found. Please try a different search term.');
       }
     } catch (error) {
-      console.error('❌ Error searching location:', error);
+      logger.error('❌ Error searching location:', error);
       alert('Error searching for location. Please try again.');
     }
     
@@ -359,15 +466,15 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
   // Function for autocomplete suggestions (separate from handleSearch)
   const searchLocation = async (query: string) => {
     try {
-      console.log('🔍 Starting autocomplete search for:', query);
-      console.log('🔧 Using API:', searchMode);
+      logger.log('🔍 Starting autocomplete search for:', query);
+      logger.log('🔧 Using API:', searchMode);
       
       // Check cache first
       const cacheKey = `${searchMode}_${query.toLowerCase()}`;
       const cachedResults = searchCache.current.get(cacheKey);
       
       if (cachedResults) {
-        console.log('💾 Using cached results for:', query);
+        logger.log('💾 Using cached results for:', query);
         setSuggestions(cachedResults);
         setShowSuggestions(true);
         return;
@@ -377,18 +484,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
 
       if (searchMode === 'google') {
         const googleApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
-        console.log('🔑 Google API Key available:', !!googleApiKey);
+        logger.log('🔑 Google API Key available:', !!googleApiKey);
         
         if (googleApiKey && googleApiKey !== 'YOUR_API_KEY_HERE' && googleApiKey.trim() !== '') {
           const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query)}&key=${googleApiKey}&region=in`;
-          console.log('🌐 Google Maps URL:', url);
+          logger.log('🌐 Google Maps URL:', url);
           
           const response = await fetch(url);
           const data = await response.json();
-          console.log('📡 Google Maps response:', data);
+          logger.log('📡 Google Maps response:', data);
           
           if (data.status === 'REQUEST_DENIED') {
-            console.error('❌ Google Maps API key is invalid or has restrictions');
+            logger.error('❌ Google Maps API key is invalid or has restrictions');
             return;
           }
           
@@ -402,13 +509,28 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
             }));
           }
         } else {
-          console.log('⚠️ No valid Google API key, falling back to Nominatim');
+          logger.log('⚠️ No valid Google API key, falling back to Nominatim');
           // Fallback to Nominatim
           const nominatimResponse = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`,
+            {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
+              }
+            }
           );
+          
+          if (!nominatimResponse.ok) {
+            logger.error('Nominatim API error:', nominatimResponse.status);
+            setSuggestions([]);
+            setShowSuggestions(false);
+            return;
+          }
+          
           const nominatimData = await nominatimResponse.json();
-          console.log('📡 Nominatim fallback response:', nominatimData);
+          logger.log('📡 Nominatim fallback response:', nominatimData);
           
           results = nominatimData.map((item: any) => ({
             display_name: item.display_name,
@@ -421,17 +543,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
       } else if (searchMode === 'nominatim') {
         // Use Nominatim
         const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=in&addressdetails=1&dedupe=1&polygon=0&extratags=0&namedetails=0`;
-        console.log('🌐 Nominatim URL:', url);
+        logger.log('🌐 Nominatim URL:', url);
         
         const nominatimResponse = await fetch(url, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
-            'User-Agent': 'Sollidam/1.0'
+            'User-Agent': 'Sollidam/1.0 (Location Encoding System)'
           }
         });
         const nominatimData = await nominatimResponse.json();
-        console.log('📡 Nominatim response:', nominatimData);
+        logger.log('📡 Nominatim response:', nominatimData);
         
         results = nominatimData.map((item: any) => ({
           display_name: item.display_name,
@@ -442,7 +564,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         }));
       }
 
-      console.log('✅ Autocomplete results:', results);
+      logger.log('✅ Autocomplete results:', results);
       
       // Cache the results
       searchCache.current.set(cacheKey, results);
@@ -458,7 +580,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
       setSuggestions(results);
       setShowSuggestions(true);
     } catch (error) {
-      console.error('❌ Error in autocomplete search:', error);
+      logger.error('❌ Error in autocomplete search:', error);
       setSuggestions([]);
       setShowSuggestions(false);
     }
@@ -466,9 +588,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    console.log('📝 Input changed:', value);
-    console.log('🔍 Is 3-word code:', isThreeWordCode(value));
-    console.log('📏 Value length:', value.length);
+    logger.log('📝 Input changed:', value);
     
     setSearchQuery(value);
     setShowSuggestions(false);
@@ -483,30 +603,25 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
     // Clear existing timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
-      console.log('⏰ Cleared existing timeout');
     }
     
     // Auto-search for addresses (not 3-word codes) after 150ms delay (reduced for real-time feel)
     if (value.length > 2 && !isThreeWordCode(value) && searchMode !== 'coordinates') {
-      console.log('🚀 Setting up auto-search timeout for:', value);
       searchTimeoutRef.current = setTimeout(() => {
-        console.log('⏰ Auto-search timeout triggered for:', value);
         searchLocation(value);
       }, 150); // Reduced delay for better real-time feel
-    } else {
-      console.log('⏸️ Skipping auto-search (3-word code, coordinates mode, or too short)');
     }
   };
 
   const handleSuggestionClick = (suggestion: any) => {
-    console.log('📍 Suggestion clicked:', suggestion);
+    logger.log('📍 Suggestion clicked:', suggestion);
     
     // Generate the actual 3-word code from coordinates
     const encodedLocation = encodeLocation(suggestion.lat, suggestion.lon);
-    console.log('🔐 Encoded location:', encodedLocation);
+    logger.log('🔐 Encoded location:', encodedLocation);
     
     const threeWordCode = encodedLocation ? formatEncodedLocation(encodedLocation) : 'invalid.coordinates.code';
-    console.log('📝 Generated 3-word code:', threeWordCode);
+    logger.log('📝 Generated 3-word code:', threeWordCode);
     
     if (onLocationSelect) {
       const locationToSelect = {
@@ -514,10 +629,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
         lng: suggestion.lon,
         floor: undefined
       };
-      console.log('🗺️ Calling onLocationSelect with:', locationToSelect);
+      logger.log('🗺️ Calling onLocationSelect with:', locationToSelect);
       onLocationSelect(locationToSelect);
     } else {
-      console.warn('⚠️ onLocationSelect is not provided');
+      logger.warn('⚠️ onLocationSelect is not provided');
     }
     
     // Use the better name for display
@@ -770,7 +885,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onLocationSelect, initialLocation
                       }, 2000);
                     }
                   }).catch((error) => {
-                    console.log('Share cancelled or failed:', error);
+                    logger.log('Share cancelled or failed:', error);
                     // Fallback to clipboard if sharing fails
                     navigator.clipboard.writeText(shareData.url).then(() => {
                       const button = event?.target as HTMLElement;

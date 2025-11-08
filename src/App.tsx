@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Location } from './utils/encoding';
 import { encodeLocation, decodeLocation, parseEncodedLocation } from './services/sollidamService';
@@ -7,6 +7,7 @@ import SearchBar from './components/SearchBar';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ApiPage from './pages/ApiPage';
+import logger from './utils/logger';
 import './App.css';
 
 function App() {
@@ -14,30 +15,27 @@ function App() {
   const [encodedLocation, setEncodedLocation] = useState<string | null>(null);
   const [initialLocationFromUrl, setInitialLocationFromUrl] = useState<Location | null>(null);
   const [initialEncodedFromUrl, setInitialEncodedFromUrl] = useState<string | null>(null);
+  const urlProcessedRef = useRef<string | null>(null); // Track processed URL parameters
 
-  const handleLocationSelect = (location: Location) => {
-    console.log('🗺️ App: handleLocationSelect called with:', location);
+  const handleLocationSelect = useCallback((location: Location) => {
+    logger.log('🗺️ App: handleLocationSelect called with:', location);
     setSelectedLocation(location);
-    console.log('🗺️ App: selectedLocation state updated');
     
     // Encode the location
     const encoded = encodeLocation(location.lat, location.lng, location.floor);
     if (encoded) {
       const encodedString = encoded.words.join('.') + (encoded.floor ? `.${encoded.floor}` : '');
-      console.log('🔐 App: Encoded location string:', encodedString);
+      logger.log('🔐 App: Encoded location string:', encodedString);
       setEncodedLocation(encodedString);
-      console.log('🔐 App: encodedLocation state updated');
     } else {
-      console.warn('⚠️ App: Failed to encode location');
+      logger.warn('⚠️ App: Failed to encode location');
       setEncodedLocation(null);
     }
-  };
+  }, []);
 
   const handleMapClick = (location: Location) => {
-    console.log('🗺️ App: Map clicked at:', location);
-    console.log('🗺️ App: Calling handleLocationSelect...');
+    logger.log('🗺️ App: Map clicked at:', location);
     handleLocationSelect(location);
-    console.log('🗺️ App: handleLocationSelect completed');
   };
 
   return (
@@ -53,6 +51,7 @@ function App() {
           setInitialLocationFromUrl={setInitialLocationFromUrl}
           setInitialEncodedFromUrl={setInitialEncodedFromUrl}
           onMapClick={handleMapClick}
+          urlProcessedRef={urlProcessedRef}
         />
       </div>
     </Router>
@@ -68,7 +67,8 @@ function AppContent({
   initialEncodedFromUrl,
   setInitialLocationFromUrl,
   setInitialEncodedFromUrl,
-  onMapClick
+  onMapClick,
+  urlProcessedRef
 }: {
   selectedLocation: Location | null;
   encodedLocation: string | null;
@@ -78,6 +78,7 @@ function AppContent({
   setInitialLocationFromUrl: (location: Location | null) => void;
   setInitialEncodedFromUrl: (encoded: string | null) => void;
   onMapClick: (location: Location) => void;
+  urlProcessedRef: React.MutableRefObject<string | null>;
 }) {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
@@ -87,18 +88,22 @@ function AppContent({
     const urlParams = new URLSearchParams(location.search);
     const placeParam = urlParams.get('place');
     
-    if (placeParam && isHomePage) {
-      console.log('🔍 Found place parameter in URL:', placeParam);
+    // Prevent infinite loop: only process if URL parameter changed and hasn't been processed
+    if (placeParam && isHomePage && placeParam !== urlProcessedRef.current) {
+      logger.log('🔍 Found place parameter in URL:', placeParam);
+      
+      // Mark this URL parameter as processed
+      urlProcessedRef.current = placeParam;
       
       // Parse the encoded location from URL
       const parsed = parseEncodedLocation(placeParam);
       if (parsed) {
-        console.log('📝 Parsed encoded location:', parsed);
+        logger.log('📝 Parsed encoded location:', parsed);
         
         // Decode the location
         const decodedLocation = decodeLocation(parsed.words, parsed.floor);
         if (decodedLocation) {
-          console.log('📍 Decoded location from URL:', decodedLocation);
+          logger.log('📍 Decoded location from URL:', decodedLocation);
           
           // Set the location and encoded string
           onLocationSelect(decodedLocation);
@@ -112,13 +117,16 @@ function AppContent({
             // Note: We can't directly set encodedLocation here, but it will be set by onLocationSelect
           }
         } else {
-          console.error('❌ Failed to decode location from URL');
+          logger.error('❌ Failed to decode location from URL');
         }
       } else {
-        console.error('❌ Failed to parse encoded location from URL');
+        logger.error('❌ Failed to parse encoded location from URL');
       }
+    } else if (!placeParam) {
+      // Reset processed ref when place parameter is removed
+      urlProcessedRef.current = null;
     }
-  }, [location.search, isHomePage, onLocationSelect, setInitialLocationFromUrl, setInitialEncodedFromUrl]);
+  }, [location.search, isHomePage, onLocationSelect]);
 
   return (
     <>

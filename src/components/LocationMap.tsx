@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Plus, Minus, Navigation, Loader2 } from 'lucide-react';
 import { Location, latLngToGrid, gridToLatLng, GRID_RESOLUTION, METERS_PER_DEGREE_LAT, METERS_PER_DEGREE_LNG } from '../utils/encoding';
+import logger from '../utils/logger';
 
 // Tamil Nadu bounds (defined locally to avoid import issues)
 const TAMIL_NADU_BOUNDS = {
@@ -56,13 +57,13 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
 
   // Initialize map (only once)
   useEffect(() => {
-    console.log('🗺️ LocationMap: Initializing map...');
+    logger.log('🗺️ LocationMap: Initializing map...');
     
     if (!mapRef.current) return;
 
     // Check if container already has a Leaflet map
     if ((mapRef.current as any)._leaflet_id) {
-      console.log('Map container already has a Leaflet map, skipping initialization');
+      logger.log('Map container already has a Leaflet map, skipping initialization');
       return;
     }
 
@@ -81,16 +82,22 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
         
         // Check again if container already has a map
         if ((mapRef.current as any)._leaflet_id) {
-          console.log('Map container already has a Leaflet map after delay, skipping initialization');
+          logger.log('Map container already has a Leaflet map after delay, skipping initialization');
           return;
         }
+        
+        // Initialize map with location if available, otherwise default to Tamil Nadu center
+        const initialView = location 
+          ? [location.lat, location.lng] 
+          : [10.7905, 78.7047];
+        const initialZoom = location ? 18 : 8;
         
         mapInstanceRef.current = L.map(mapRef.current, {
           minZoom: 6,
           maxZoom: 22,
           zoomControl: false, // Disable default zoom controls
           attributionControl: false // Disable attribution control completely
-        }).setView([10.7905, 78.7047], 8); // Center of Tamil Nadu
+        }).setView(initialView as [number, number], initialZoom);
 
         // Initialize with street view by default
         tileLayerRef.current = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -118,7 +125,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
             lng: e.latlng.lng,
             floor: undefined
           };
-          console.log('🗺️ Map clicked at:', clickedLocation);
+          logger.log('🗺️ Map clicked at:', clickedLocation);
           if (onMapClick) {
             onMapClick(clickedLocation);
           }
@@ -128,6 +135,55 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
         setTimeout(() => {
           if (mapInstanceRef.current) {
             mapInstanceRef.current.invalidateSize();
+            
+            // If location exists, center and show grid immediately after map is ready
+            if (location) {
+              logger.log('🗺️ Map initialized with location, centering now:', location);
+              mapInstanceRef.current.setView([location.lat, location.lng], 18, {
+                animate: true,
+                duration: 0.5
+              });
+              
+              // Add grid after map is centered
+              setTimeout(() => {
+                if (!mapInstanceRef.current || !location) return;
+                
+                if (showGrid && mapInstanceRef.current) {
+                  // Clear existing grid
+                  if (gridRef.current) {
+                    mapInstanceRef.current.removeLayer(gridRef.current);
+                  }
+                  
+                  // Create new grid layer group
+                  gridRef.current = L.layerGroup();
+                  
+                  // Get the grid coordinates for this location
+                  const gridCoords = latLngToGrid(location.lat, location.lng);
+                  
+                  // Calculate the actual grid cell bounds using our encoding system
+                  const gridCellCenter = gridToLatLng(gridCoords.x, gridCoords.y);
+                  const halfGridSizeLat = (GRID_RESOLUTION / 2) / METERS_PER_DEGREE_LAT;
+                  const halfGridSizeLng = (GRID_RESOLUTION / 2) / METERS_PER_DEGREE_LNG;
+                  
+                  const selectedCellBounds: L.LatLngBoundsLiteral = [
+                    [gridCellCenter.lat - halfGridSizeLat, gridCellCenter.lng - halfGridSizeLng] as L.LatLngTuple,
+                    [gridCellCenter.lat + halfGridSizeLat, gridCellCenter.lng + halfGridSizeLng] as L.LatLngTuple
+                  ];
+
+                  // Create red highlight for selected grid cell
+                  const selectedCellHighlight = L.rectangle(selectedCellBounds, {
+                    color: '#ff0000',
+                    weight: 3,
+                    fillColor: '#ff0000',
+                    fillOpacity: 0.3
+                  });
+                  
+                  // Add to layer group and then add layer group to map
+                  gridRef.current.addLayer(selectedCellHighlight);
+                  gridRef.current.addTo(mapInstanceRef.current);
+                }
+              }, 300);
+            }
           }
         }, 100);
 
@@ -169,42 +225,51 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
         });
       }, 50);
     }
-  }, []); // Only run once on mount
+  }, []); // Only run once on mount - location is handled separately
 
   // Handle location changes (separate from map initialization)
   useEffect(() => {
-    console.log('🗺️ LocationMap: Location or encodedLocation changed:', { location, encodedLocation });
+    logger.log('🗺️ LocationMap: Location or encodedLocation changed:', { location, encodedLocation });
     
-    // Wait for map to be initialized
-    if (!mapInstanceRef.current) {
-      console.log('🗺️ LocationMap: Map not yet initialized, waiting...');
-      return;
-    }
-
-    // Add a small delay to ensure map is fully ready
-    setTimeout(() => {
+    // Function to handle location update
+    const handleLocationUpdate = () => {
       if (!mapInstanceRef.current) return;
       
-      console.log('🗺️ LocationMap: Processing location change...');
+      if (!location) {
+        // Clear grid if no location
+        if (gridRef.current && mapInstanceRef.current) {
+          mapInstanceRef.current.removeLayer(gridRef.current);
+          gridRef.current = null;
+        }
+        return;
+      }
 
-      // Clear existing markers and grid
+      // Clear existing markers and grid first
       if (markerRef.current && mapInstanceRef.current) {
-        console.log('🗺️ Cleaning up old marker');
         mapInstanceRef.current.removeLayer(markerRef.current);
         markerRef.current = null;
       }
       if (gridRef.current && mapInstanceRef.current) {
-        console.log('🗺️ Cleaning up old grid highlight');
         mapInstanceRef.current.removeLayer(gridRef.current);
         gridRef.current = null;
       }
 
-      if (location && mapInstanceRef.current) {
-        console.log('🗺️ LocationMap: Adding location highlight for:', location);
+      // Center map on location immediately
+      logger.log('🗺️ LocationMap: Centering map on location:', location);
+      mapInstanceRef.current.setView([location.lat, location.lng], 18, {
+        animate: true,
+        duration: 0.5
+      });
+
+      // Add grid highlight after a brief delay to ensure map is centered
+      setTimeout(() => {
+        if (!mapInstanceRef.current || !location) return;
+        
+        logger.log('🗺️ LocationMap: Adding location highlight for:', location);
         
         // Add red highlight for the selected grid cell
         if (showGrid && mapInstanceRef.current) {
-          console.log('🗺️ Creating new grid highlight for location:', location);
+          logger.log('🗺️ Creating new grid highlight for location:', location);
           
           // Create new grid layer group
           gridRef.current = L.layerGroup();
@@ -235,34 +300,28 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
           gridRef.current.addTo(mapInstanceRef.current);
         }
 
-        // Center map on location with higher zoom to see the grid
-        console.log('🗺️ LocationMap: Centering map on location:', location);
-        mapInstanceRef.current.setView([location.lat, location.lng], 18);
-        
-        // Add a small delay and then zoom in further for better visibility
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            console.log('🗺️ LocationMap: Setting zoom level to 18');
-            mapInstanceRef.current.setZoom(18);
-            // Force a resize to ensure proper rendering
-            mapInstanceRef.current.invalidateSize();
-          }
-        }, 100);
-      }
+        // Force a resize to ensure proper rendering
+        mapInstanceRef.current.invalidateSize();
+      }, 300);
+    };
+    
+    // Wait for map to be initialized - use a retry mechanism
+    if (!mapInstanceRef.current) {
+      logger.log('🗺️ LocationMap: Map not yet initialized, waiting...');
+      
+      // Retry after a short delay if map is still initializing
+      const retryTimeout = setTimeout(() => {
+        if (mapInstanceRef.current && location) {
+          logger.log('🗺️ Map now ready, processing location');
+          handleLocationUpdate();
+        }
+      }, 300);
+      
+      return () => clearTimeout(retryTimeout);
+    }
 
-      // Cleanup function
-      return () => {
-        // Don't remove the map instance here, just clean up markers
-        if (markerRef.current && mapInstanceRef.current) {
-          mapInstanceRef.current.removeLayer(markerRef.current);
-          markerRef.current = null;
-        }
-        if (gridRef.current && mapInstanceRef.current) {
-          mapInstanceRef.current.removeLayer(gridRef.current);
-          gridRef.current = null;
-        }
-      };
-    }, 100); // Add a small delay to ensure map is fully ready
+    // Map is ready, handle location update
+    handleLocationUpdate();
   }, [location, encodedLocation, showGrid]);
 
   // Separate cleanup effect for component unmount
@@ -293,12 +352,12 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
 
   const handleCurrentLocation = () => {
     if (navigator.geolocation) {
-      console.log('Starting location request...');
+      logger.log('Starting location request...');
       setIsLocationLoading(true);
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log('Location obtained:', position);
+          logger.log('Location obtained:', position);
           const { latitude, longitude, accuracy } = position.coords;
           
           if (mapInstanceRef.current) {
@@ -341,13 +400,13 @@ const LocationMap: React.FC<LocationMapProps> = ({ location, encodedLocation, on
           }
           
           setIsLocationLoading(false);
-          console.log('Location loading completed');
+          logger.log('Location loading completed');
         },
         (error) => {
-          console.error('Error getting current location:', error);
+          logger.error('Error getting current location:', error);
           alert('Unable to get your current location. Please check your browser permissions.');
           setIsLocationLoading(false);
-          console.log('Location loading failed');
+          logger.log('Location loading failed');
         },
         {
           timeout: 10000, // 10 second timeout
